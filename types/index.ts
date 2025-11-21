@@ -33,4 +33,5 @@ export interface EscapeThemeDisplay extends EscapeTheme {
     branchName: string;
     address: string;
     location: { lat: number; lng: number };
+    websiteUrl?: string;
 }

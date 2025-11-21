@@ -120,6 +120,7 @@ export const useEscapeStore = create<EscapeStore>()(
                             branchName: branch.branchName,
                             address: branch.address,
                             location: { lat: branch.lat, lng: branch.lng },
+                            websiteUrl: branch.websiteUrl,
                         });
                     });
                 });

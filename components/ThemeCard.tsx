@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Heart, Star, MapPin, Activity, Ghost, ThumbsUp } from "lucide-react";
+import { Heart, Star, MapPin, Activity, Ghost, ThumbsUp, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoriteStore } from "@/lib/store";
 import { EscapeThemeDisplay } from "@/types";
@@ -17,10 +17,11 @@ interface ScoreBarProps {
     score: number;
     icon: React.ElementType;
     colorClass: string;
+    bgClass: string;
 }
 
 // Helper to render score bars
-const ScoreBar = ({ label, score, icon: Icon, colorClass }: ScoreBarProps) => (
+const ScoreBar = ({ label, score, icon: Icon, colorClass, bgClass }: ScoreBarProps) => (
     <div className="flex items-center gap-2 text-xs">
         <div className={cn("flex items-center gap-1 w-16 shrink-0", colorClass)}>
             <Icon className="h-3 w-3" />
@@ -28,7 +29,7 @@ const ScoreBar = ({ label, score, icon: Icon, colorClass }: ScoreBarProps) => (
         </div>
         <div className="h-1.5 flex-1 rounded-full bg-gray-100 overflow-hidden">
             <div
-                className={cn("h-full rounded-full transition-all duration-500", colorClass.replace("text-", "bg-"))}
+                className={cn("h-full rounded-full transition-all duration-500", bgClass)}
                 style={{ width: `${score * 10}%` }}
             />
         </div>
@@ -112,11 +113,25 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
 
                 {/* Scores Grid */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <ScoreBar label="난이도" score={theme.difficulty} icon={Star} colorClass="text-yellow-500" />
-                    <ScoreBar label="공포도" score={theme.fear} icon={Ghost} colorClass="text-purple-500" />
-                    <ScoreBar label="활동성" score={theme.activity} icon={Activity} colorClass="text-blue-500" />
-                    <ScoreBar label="추천도" score={theme.recommendation} icon={ThumbsUp} colorClass="text-green-500" />
+                    <ScoreBar label="난이도" score={theme.difficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
+                    <ScoreBar label="공포도" score={theme.fear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
+                    <ScoreBar label="활동성" score={theme.activity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
+                    <ScoreBar label="추천도" score={theme.recommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
                 </div>
+
+                {/* Homepage Link */}
+                {theme.websiteUrl && (
+                    <a
+                        href={theme.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-blue-50 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100"
+                    >
+                        <ExternalLink className="h-4 w-4" />
+                        홈페이지 방문
+                    </a>
+                )}
             </div>
         </div>
     );

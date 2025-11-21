@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useState, useEffect, useCallback } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEscapeStore } from "@/lib/store";
@@ -28,6 +28,18 @@ const BranchMarkerIcon = L.divIcon({
     popupAnchor: [0, -32],
 });
 
+// Create cluster icon with count
+const createClusterIcon = (count: number) => {
+    return L.divIcon({
+        html: `<div class="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full shadow-lg border-3 border-white text-white font-bold text-sm">
+        ${count}
+      </div>`,
+        className: "cluster-icon",
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+    });
+};
+
 function MapController({ center }: { center: [number, number] }) {
     const map = useMap();
     useEffect(() => {
@@ -36,11 +48,64 @@ function MapController({ center }: { center: [number, number] }) {
     return null;
 }
 
+// Component to track zoom level
+function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
+    const map = useMapEvents({
+        zoomend: () => {
+            onZoomChange(map.getZoom());
+        },
+    });
+
+    useEffect(() => {
+        onZoomChange(map.getZoom());
+    }, [map, onZoomChange]);
+
+    return null;
+}
+
+// Simple clustering function based on distance
+function clusterBranches(branches: EscapeBranch[], distance: number = 0.05): Array<{ lat: number; lng: number; branches: EscapeBranch[] }> {
+    const clusters: Array<{ lat: number; lng: number; branches: EscapeBranch[] }> = [];
+    const used = new Set<string>();
+
+    branches.forEach((branch) => {
+        if (used.has(branch.id)) return;
+
+        const cluster = {
+            lat: branch.lat,
+            lng: branch.lng,
+            branches: [branch],
+        };
+
+        branches.forEach((other) => {
+            if (used.has(other.id) || branch.id === other.id) return;
+
+            const dist = Math.sqrt(
+                Math.pow(branch.lat - other.lat, 2) +
+                Math.pow(branch.lng - other.lng, 2)
+            );
+
+            if (dist < distance) {
+                cluster.branches.push(other);
+                cluster.lat = (cluster.lat * cluster.branches.length + other.lat) / (cluster.branches.length + 1);
+                cluster.lng = (cluster.lng * cluster.branches.length + other.lng) / (cluster.branches.length + 1);
+                used.add(other.id);
+            }
+        });
+
+        used.add(branch.id);
+        clusters.push(cluster);
+    });
+
+    return clusters;
+}
+
 export default function MapComponent() {
     const { branches } = useEscapeStore();
     const [filteredBranches, setFilteredBranches] = useState<EscapeBranch[]>([]);
     const [mapCenter, setMapCenter] = useState<[number, number]>([37.498095, 127.027610]); // Default Gangnam
     const [mounted, setMounted] = useState(false);
+    const [currentZoom, setCurrentZoom] = useState(13);
 
     useEffect(() => {
         setMounted(true);
@@ -48,7 +113,7 @@ export default function MapComponent() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [branches]);
 
-    const handleSearch = (query: string) => {
+    const handleSearch = useCallback((query: string) => {
         if (!query) {
             setFilteredBranches(branches);
             return;
@@ -69,9 +134,9 @@ export default function MapComponent() {
         if (filtered.length > 0) {
             setMapCenter([filtered[0].lat, filtered[0].lng]);
         }
-    };
+    }, [branches]);
 
-    const handleFilterChange = (filters: FilterState) => {
+    const handleFilterChange = useCallback((filters: FilterState) => {
         // Filter logic: A branch is shown if it has AT LEAST ONE theme matching the filters
         const filtered = branches.filter((branch) => {
             return branch.themes.some((theme) => {
@@ -84,9 +149,23 @@ export default function MapComponent() {
             });
         });
         setFilteredBranches(filtered);
-    };
+    }, [branches]);
+
+    const handleZoomChange = useCallback((zoom: number) => {
+        setCurrentZoom(zoom);
+    }, []);
 
     if (!mounted) return null;
+
+    // Zoom level thresholds
+    const MIN_ZOOM_TO_SHOW = 13; // Below this, show nothing
+    const CLUSTER_ZOOM = 16; // Below this (but above MIN_ZOOM_TO_SHOW), show clusters (i.e., 13-15)
+
+    const showNothing = currentZoom < MIN_ZOOM_TO_SHOW;
+    const showClusters = currentZoom >= MIN_ZOOM_TO_SHOW && currentZoom < CLUSTER_ZOOM;
+    const showMarkers = currentZoom >= CLUSTER_ZOOM;
+
+    const clusters = showClusters ? clusterBranches(filteredBranches) : [];
 
     return (
         <div className="relative h-full w-full">
@@ -108,8 +187,10 @@ export default function MapComponent() {
                 />
 
                 <MapController center={mapCenter} />
+                <ZoomTracker onZoomChange={handleZoomChange} />
 
-                {filteredBranches.map((branch) => (
+                {/* Render individual markers at high zoom */}
+                {showMarkers && filteredBranches.map((branch) => (
                     <Marker
                         key={branch.id}
                         position={[branch.lat, branch.lng]}
@@ -158,6 +239,32 @@ export default function MapComponent() {
                                         테마 보기
                                     </Link>
                                 </div>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Render clusters at medium zoom */}
+                {showClusters && clusters.map((cluster, idx) => (
+                    <Marker
+                        key={`cluster-${idx}`}
+                        position={[cluster.lat, cluster.lng]}
+                        icon={createClusterIcon(cluster.branches.length)}
+                    >
+                        <Popup className="custom-popup" minWidth={280}>
+                            <div className="p-2">
+                                <h3 className="mb-2 text-sm font-bold text-gray-900">
+                                    이 지역의 지점 ({cluster.branches.length}개)
+                                </h3>
+                                <div className="space-y-1 max-h-40 overflow-y-auto">
+                                    {cluster.branches.map((branch) => (
+                                        <div key={branch.id} className="text-xs">
+                                            <p className="font-medium text-gray-800">{branch.brandName} {branch.branchName}</p>
+                                            <p className="text-gray-500">{branch.themes.length}개 테마</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">확대하여 개별 지점을 확인하세요</p>
                             </div>
                         </Popup>
                     </Marker>

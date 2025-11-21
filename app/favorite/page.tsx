@@ -25,7 +25,8 @@ export default function FavoritePage() {
             const filtered = allThemes.filter((theme) => favorites.includes(theme.id));
             setFavoriteThemes(filtered);
         }
-    }, [mounted, favorites, getAllThemes]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, favorites]);
 
     if (!mounted) return null;
 
