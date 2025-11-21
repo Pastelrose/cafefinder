@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
-import "leaflet/dist/leaflet.css";
+import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import Image from "next/image";
-import { Star, MapPin, Globe, Heart } from "lucide-react";
-import SearchBar from "@/components/SearchBar";
-import { useFavoriteStore, useCafeStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
-import { Cafe } from "@/types";
+import "leaflet/dist/leaflet.css";
+import { useEscapeStore } from "@/lib/store";
+import { EscapeBranch } from "@/types";
+import SearchBar, { FilterState } from "./SearchBar";
+import Link from "next/link";
 
-// Fix Leaflet icon issue
+// Fix Leaflet default icon issue
 const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
     shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
@@ -21,191 +18,88 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Cluster Icon
-const createClusterCustomIcon = function (cluster: any) {
-    return L.divIcon({
-        html: `<span class="cluster-icon">${cluster.getChildCount()}</span>`,
-        className: "custom-marker-cluster",
-        iconSize: L.point(33, 33, true),
-    });
-};
+const BranchMarkerIcon = L.divIcon({
+    html: `<div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full shadow-lg border-2 border-white text-white">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  </div>`,
+    className: "custom-pin-icon",
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+});
 
-// Custom Photo Pin Icon
-const createPhotoIcon = (imageUrl: string) => {
-    return L.divIcon({
-        className: "custom-photo-pin",
-        html: `
-      <div class="pin-inner">
-        <img src="${imageUrl}" alt="cafe" />
-      </div>
-      <div class="pin-tip"></div>
-    `,
-        iconSize: [48, 54], // Width, Height (including tip)
-        iconAnchor: [24, 54], // Center bottom
-        popupAnchor: [0, -50],
-    });
-};
-
-// Component to handle zoom events
-function ZoomHandler({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
-    const map = useMapEvents({
-        zoomend: () => {
-            onZoomChange(map.getZoom());
-        },
-    });
+function MapController({ center }: { center: [number, number] }) {
+    const map = useMap();
+    useEffect(() => {
+        map.flyTo(center, 15, { duration: 1.5 });
+    }, [center, map]);
     return null;
 }
 
 export default function MapComponent() {
-    const [isMounted, setIsMounted] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [filterOperator, setFilterOperator] = useState<"AND" | "OR">("OR");
-    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-    const [currentZoom, setCurrentZoom] = useState(13);
-
-    const { favoriteIds, addFavorite, removeFavorite, isFavorite } = useFavoriteStore();
-    const { cafes } = useCafeStore();
-
-    const allTags = useMemo(() => Array.from(new Set(cafes.flatMap((cafe) => cafe.tags))), [cafes]);
+    const { branches } = useEscapeStore();
+    const [filteredBranches, setFilteredBranches] = useState<EscapeBranch[]>([]);
+    const [mapCenter, setMapCenter] = useState<[number, number]>([37.498095, 127.027610]); // Default Gangnam
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
-    }, []);
+        setMounted(true);
+        setFilteredBranches(branches);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [branches]);
 
-    const filteredCafes = cafes.filter((cafe) => {
-        if (showFavoritesOnly && !isFavorite(cafe.id)) return false;
-
-        const matchesSearch =
-            cafe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cafe.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cafe.address.toLowerCase().includes(searchQuery.toLowerCase());
-
-        let matchesTags = true;
-        if (selectedTags.length > 0) {
-            if (filterOperator === "AND") {
-                matchesTags = selectedTags.every((tag) => cafe.tags.includes(tag));
-            } else {
-                matchesTags = selectedTags.some((tag) => cafe.tags.includes(tag));
-            }
+    const handleSearch = (query: string) => {
+        if (!query) {
+            setFilteredBranches(branches);
+            return;
         }
 
-        return matchesSearch && matchesTags;
-    });
+        const lowerQuery = query.toLowerCase();
+        const filtered = branches.filter((branch) => {
+            // Search by Brand, Branch, or Theme Name
+            const matchBrand = branch.brandName.toLowerCase().includes(lowerQuery);
+            const matchBranch = branch.branchName.toLowerCase().includes(lowerQuery);
+            const matchTheme = branch.themes.some(t => t.name.toLowerCase().includes(lowerQuery));
 
-    const handleSearch = (query: string) => setSearchQuery(query);
-    const handleFilterChange = (tags: string[], operator: "AND" | "OR") => {
-        setSelectedTags(tags);
-        setFilterOperator(operator);
-    };
+            return matchBrand || matchBranch || matchTheme;
+        });
 
-    const toggleFavorite = (e: React.MouseEvent, cafeId: string) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (isFavorite(cafeId)) {
-            removeFavorite(cafeId);
-        } else {
-            addFavorite(cafeId);
+        setFilteredBranches(filtered);
+
+        if (filtered.length > 0) {
+            setMapCenter([filtered[0].lat, filtered[0].lng]);
         }
     };
 
-    if (!isMounted) {
-        return (
-            <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                <p>Loading Map...</p>
-            </div>
-        );
-    }
+    const handleFilterChange = (filters: FilterState) => {
+        // Filter logic: A branch is shown if it has AT LEAST ONE theme matching the filters
+        const filtered = branches.filter((branch) => {
+            return branch.themes.some((theme) => {
+                const matchDiff = theme.difficulty >= filters.difficulty[0] && theme.difficulty <= filters.difficulty[1];
+                const matchFear = theme.fear >= filters.fear[0] && theme.fear <= filters.fear[1];
+                const matchAct = theme.activity >= filters.activity[0] && theme.activity <= filters.activity[1];
+                const matchRec = theme.recommendation >= filters.recommendation[0] && theme.recommendation <= filters.recommendation[1];
 
-    const showMarkers = currentZoom >= 10;
+                return matchDiff && matchFear && matchAct && matchRec;
+            });
+        });
+        setFilteredBranches(filtered);
+    };
+
+    if (!mounted) return null;
 
     return (
         <div className="relative h-full w-full">
-            <style jsx global>{`
-        /* Cluster Icon Style */
-        .custom-marker-cluster {
-          background-color: rgba(59, 130, 246, 0.95);
-          border-radius: 50%;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 14px;
-          border: 2px solid white;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Photo Pin Style */
-        .custom-photo-pin {
-          background: transparent;
-        }
-        
-        .custom-photo-pin .pin-inner {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%; /* Circular */
-          border: 3px solid white;
-          background: white;
-          overflow: hidden;
-          box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-          position: relative;
-          z-index: 2;
-        }
-
-        .custom-photo-pin .pin-inner img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.2s;
-        }
-        
-        /* Hover effect */
-        .custom-photo-pin:hover .pin-inner {
-          transform: scale(1.1);
-          border-color: #3b82f6; /* Blue border on hover */
-        }
-
-        .custom-photo-pin .pin-tip {
-          width: 12px;
-          height: 12px;
-          background: white;
-          position: absolute;
-          bottom: 2px;
-          left: 50%;
-          transform: translateX(-50%) rotate(45deg);
-          box-shadow: 2px 2px 2px rgba(0,0,0,0.1);
-          z-index: 1;
-        }
-      `}</style>
-
-            <div className="absolute left-0 right-0 top-0 z-[1000] p-4 flex flex-col gap-2">
-                <SearchBar
-                    allTags={allTags}
-                    onSearch={handleSearch}
-                    onFilterChange={handleFilterChange}
-                    className="rounded-xl shadow-md"
-                />
-                <button
-                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                    className={cn(
-                        "self-start flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium shadow-md transition-colors",
-                        showFavoritesOnly
-                            ? "text-red-500 ring-2 ring-red-100"
-                            : "text-gray-600 hover:bg-gray-50"
-                    )}
-                >
-                    <Heart className={cn("h-4 w-4", showFavoritesOnly && "fill-current")} />
-                    <span>{showFavoritesOnly ? "찜한 카페만" : "모든 카페"}</span>
-                </button>
+            {/* Search Bar Overlay */}
+            <div className="absolute left-4 right-4 top-4 z-[1000] flex justify-center">
+                <SearchBar onSearch={handleSearch} onFilterChange={handleFilterChange} />
             </div>
 
             <MapContainer
-                center={[37.5665, 126.978]}
+                center={mapCenter}
                 zoom={13}
                 scrollWheelZoom={true}
-                className="h-full w-full"
-                style={{ height: "100%", width: "100%" }}
+                className="h-full w-full z-0"
                 zoomControl={false}
             >
                 <TileLayer
@@ -213,83 +107,61 @@ export default function MapComponent() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                <ZoomHandler onZoomChange={setCurrentZoom} />
+                <MapController center={mapCenter} />
 
-                {showMarkers && (
-                    <MarkerClusterGroup
-                        chunkedLoading
-                        maxClusterRadius={60}
-                        disableClusteringAtZoom={16}
-                        iconCreateFunction={createClusterCustomIcon}
+                {filteredBranches.map((branch) => (
+                    <Marker
+                        key={branch.id}
+                        position={[branch.lat, branch.lng]}
+                        icon={BranchMarkerIcon}
                     >
-                        {filteredCafes.map((cafe) => {
-                            // Defensive check for invalid coordinates
-                            if (typeof cafe.lat !== 'number' || typeof cafe.lng !== 'number') return null;
+                        <Popup className="custom-popup" minWidth={280}>
+                            <div className="p-1">
+                                <div className="mb-2 border-b border-gray-100 pb-2">
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                        {branch.brandName} <span className="text-sm font-normal text-gray-500">{branch.branchName}</span>
+                                    </h3>
+                                    <p className="text-xs text-gray-500">{branch.address}</p>
+                                </div>
 
-                            return (
-                                <Marker
-                                    key={cafe.id}
-                                    position={[cafe.lat, cafe.lng]}
-                                    icon={createPhotoIcon(cafe.images[0])}
-                                >
-                                    <Popup className="custom-popup" minWidth={300}>
-                                        <div className="flex w-[300px] gap-3 overflow-hidden rounded-lg">
-                                            <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                                                <Image
-                                                    src={cafe.images[0]}
-                                                    alt={cafe.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex flex-1 flex-col py-1">
-                                                <div className="mb-1 flex items-start justify-between">
-                                                    <div>
-                                                        <h3 className="font-bold text-gray-900">{cafe.name}</h3>
-                                                        <div className="flex items-center gap-1 text-yellow-500">
-                                                            <Star className="h-3 w-3 fill-current" />
-                                                            <span className="text-xs font-medium">{cafe.rating}</span>
-                                                            <span className="text-xs text-gray-400">({cafe.reviews})</span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={(e) => toggleFavorite(e, cafe.id)}
-                                                        className="rounded-full p-1 hover:bg-gray-100"
-                                                    >
-                                                        <Heart
-                                                            className={cn(
-                                                                "h-4 w-4 transition-colors",
-                                                                isFavorite(cafe.id) ? "fill-red-500 text-red-500" : "text-gray-400"
-                                                            )}
-                                                        />
-                                                    </button>
-                                                </div>
+                                <div className="mb-3">
+                                    <p className="mb-1 text-xs font-semibold text-gray-700">보유 테마 ({branch.themes.length})</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {branch.themes.slice(0, 3).map((theme) => (
+                                            <span key={theme.id} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
+                                                {theme.name}
+                                            </span>
+                                        ))}
+                                        {branch.themes.length > 3 && (
+                                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+                                                +{branch.themes.length - 3}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
 
-                                                <div className="mt-auto space-y-1">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                        <MapPin className="h-3 w-3" />
-                                                        <span className="truncate">{cafe.address}</span>
-                                                    </div>
-                                                    {cafe.websiteUrl && (
-                                                        <a
-                                                            href={cafe.websiteUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
-                                                        >
-                                                            <Globe className="h-3 w-3" />
-                                                            <span>웹사이트 방문</span>
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                            );
-                        })}
-                    </MarkerClusterGroup>
-                )}
+                                <div className="flex gap-2">
+                                    {branch.websiteUrl && (
+                                        <a
+                                            href={branch.websiteUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 rounded-lg bg-blue-50 py-2 text-center text-xs font-medium text-blue-600 hover:bg-blue-100"
+                                        >
+                                            홈페이지
+                                        </a>
+                                    )}
+                                    <Link
+                                        href={`/list?search=${branch.brandName}`}
+                                        className="flex-1 rounded-lg bg-gray-900 py-2 text-center text-xs font-medium text-white hover:bg-gray-800"
+                                    >
+                                        테마 보기
+                                    </Link>
+                                </div>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
             </MapContainer>
         </div>
     );

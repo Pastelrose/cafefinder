@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User, Bell, ChevronRight, Settings, Edit2, PlusCircle, Shield, ShieldCheck, Trash2 } from "lucide-react";
-import { useUserStore, useCafeStore } from "@/lib/store";
+import { useUserStore, useEscapeStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import ReportCafeModal from "@/components/ReportCafeModal";
 import AdminApprovalModal from "@/components/AdminApprovalModal";
@@ -11,7 +11,7 @@ import DeleteCafeModal from "@/components/DeleteCafeModal";
 export default function ProfilePage() {
     const { nickname, notificationsEnabled, isAdmin, setNickname, toggleNotifications, toggleAdmin } =
         useUserStore();
-    const { pendingCafes } = useCafeStore();
+    const { pendingBranches } = useEscapeStore();
 
     const [isEditing, setIsEditing] = useState(false);
     const [tempNickname, setTempNickname] = useState("");
@@ -24,6 +24,7 @@ export default function ProfilePage() {
     useEffect(() => {
         setMounted(true);
         setTempNickname(nickname);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nickname]);
 
     const handleSaveNickname = () => {
@@ -76,7 +77,7 @@ export default function ProfilePage() {
                             </button>
                         </div>
                     )}
-                    <p className="mt-1 text-sm text-gray-500">Cafe Explorer</p>
+                    <p className="mt-1 text-sm text-gray-500">Escape Room Explorer</p>
 
                     {/* Admin Toggle (For Testing) */}
                     <button
@@ -104,7 +105,7 @@ export default function ProfilePage() {
                             <div>
                                 <p className="font-medium text-gray-900">알림 설정</p>
                                 <p className="text-xs text-gray-500">
-                                    새로운 카페 소식 받기
+                                    새로운 방탈출 소식 받기
                                 </p>
                             </div>
                         </div>
@@ -133,9 +134,9 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-3">
                                 <div className="relative rounded-full bg-indigo-100 p-2 text-indigo-600">
                                     <ShieldCheck className="h-5 w-5" />
-                                    {pendingCafes.length > 0 && (
+                                    {pendingBranches.length > 0 && (
                                         <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
-                                            {pendingCafes.length}
+                                            {pendingBranches.length}
                                         </span>
                                     )}
                                 </div>
@@ -159,8 +160,8 @@ export default function ProfilePage() {
                                     <Trash2 className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="font-medium text-gray-900">카페 삭제 관리</p>
-                                    <p className="text-xs text-gray-500">등록된 카페를 삭제합니다</p>
+                                    <p className="font-medium text-gray-900">지점 삭제 관리</p>
+                                    <p className="text-xs text-gray-500">등록된 지점을 삭제합니다</p>
                                 </div>
                             </div>
                             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -192,8 +193,8 @@ export default function ProfilePage() {
                                 <PlusCircle className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="font-medium text-gray-900">새로운 카페 제보하기</p>
-                                <p className="text-xs text-gray-500">나만 아는 카페를 공유해주세요</p>
+                                <p className="font-medium text-gray-900">새로운 방탈출 제보하기</p>
+                                <p className="text-xs text-gray-500">나만 아는 방탈출을 공유해주세요</p>
                             </div>
                         </div>
                         <ChevronRight className="h-5 w-5 text-gray-400" />

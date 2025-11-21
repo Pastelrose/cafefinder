@@ -1,94 +1,110 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { useCafeStore } from "@/lib/store";
-import { Cafe } from "@/types";
-import CafeCard from "@/components/CafeCard";
-import CafeModal from "@/components/CafeModal";
-import SearchBar from "@/components/SearchBar";
+import { useState, useEffect } from "react";
+import SearchBar, { FilterState } from "@/components/SearchBar";
+import ThemeCard from "@/components/ThemeCard";
 import AdBanner from "@/components/AdBanner";
+import { useEscapeStore } from "@/lib/store";
+import { EscapeThemeDisplay } from "@/types";
+import { useSearchParams } from "next/navigation";
 
 export default function ListPage() {
-    const { cafes } = useCafeStore();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [filterOperator, setFilterOperator] = useState<"AND" | "OR">("OR");
-    const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+    const { getAllThemes } = useEscapeStore();
+    const searchParams = useSearchParams();
+    const initialQuery = searchParams.get("search") || "";
 
-    // Extract all unique tags
-    const allTags = useMemo(() => Array.from(new Set(cafes.flatMap((cafe) => cafe.tags))), [cafes]);
+    const [themes, setThemes] = useState<EscapeThemeDisplay[]>([]);
+    const [filteredThemes, setFilteredThemes] = useState<EscapeThemeDisplay[]>([]);
+    const [mounted, setMounted] = useState(false);
 
-    // Filter cafes based on search and tags
-    const filteredCafes = cafes.filter((cafe) => {
-        const matchesSearch =
-            cafe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cafe.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cafe.address.toLowerCase().includes(searchQuery.toLowerCase());
+    useEffect(() => {
+        setMounted(true);
+        const allThemes = getAllThemes();
+        setThemes(allThemes);
 
-        let matchesTags = true;
-        if (selectedTags.length > 0) {
-            if (filterOperator === "AND") {
-                matchesTags = selectedTags.every((tag) => cafe.tags.includes(tag));
-            } else {
-                matchesTags = selectedTags.some((tag) => cafe.tags.includes(tag));
-            }
+        // Initial filter if search param exists
+        if (initialQuery) {
+            const lowerQuery = initialQuery.toLowerCase();
+            const filtered = allThemes.filter((theme) => {
+                return (
+                    theme.brandName.toLowerCase().includes(lowerQuery) ||
+                    theme.branchName.toLowerCase().includes(lowerQuery) ||
+                    theme.name.toLowerCase().includes(lowerQuery)
+                );
+            });
+            setFilteredThemes(filtered);
+        } else {
+            setFilteredThemes(allThemes);
         }
-
-        return matchesSearch && matchesTags;
-    });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [getAllThemes, initialQuery]);
 
     const handleSearch = (query: string) => {
-        setSearchQuery(query);
+        if (!query) {
+            setFilteredThemes(themes);
+            return;
+        }
+
+        const lowerQuery = query.toLowerCase();
+        const filtered = themes.filter((theme) => {
+            return (
+                theme.brandName.toLowerCase().includes(lowerQuery) ||
+                theme.branchName.toLowerCase().includes(lowerQuery) ||
+                theme.name.toLowerCase().includes(lowerQuery)
+            );
+        });
+        setFilteredThemes(filtered);
     };
 
-    const handleFilterChange = (tags: string[], operator: "AND" | "OR") => {
-        setSelectedTags(tags);
-        setFilterOperator(operator);
+    const handleFilterChange = (filters: FilterState) => {
+        const filtered = themes.filter((theme) => {
+            const matchDiff = theme.difficulty >= filters.difficulty[0] && theme.difficulty <= filters.difficulty[1];
+            const matchFear = theme.fear >= filters.fear[0] && theme.fear <= filters.fear[1];
+            const matchAct = theme.activity >= filters.activity[0] && theme.activity <= filters.activity[1];
+            const matchRec = theme.recommendation >= filters.recommendation[0] && theme.recommendation <= filters.recommendation[1];
+
+            return matchDiff && matchFear && matchAct && matchRec;
+        });
+        setFilteredThemes(filtered);
     };
+
+    if (!mounted) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
-            {/* Header & Search */}
-            <div className="sticky top-0 z-10">
-                <SearchBar
-                    allTags={allTags}
-                    onSearch={handleSearch}
-                    onFilterChange={handleFilterChange}
-                />
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-white px-4 py-3 shadow-sm">
+                <SearchBar onSearch={handleSearch} onFilterChange={handleFilterChange} />
             </div>
 
-            {/* Cafe List */}
+            {/* Content */}
             <div className="p-4">
-                <div className="flex flex-col gap-4">
-                    {filteredCafes.length > 0 ? (
-                        filteredCafes.map((cafe, index) => (
-                            <React.Fragment key={cafe.id}>
-                                <div
-                                    onClick={() => setSelectedCafe(cafe)}
-                                    className="cursor-pointer"
-                                >
-                                    <CafeCard cafe={cafe} />
-                                </div>
-                                {/* Insert AdBanner every 5 items */}
-                                {(index + 1) % 5 === 0 && (
-                                    <AdBanner />
-                                )}
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        <div className="mt-10 text-center text-gray-500">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-900">
+                        검색 결과 <span className="text-blue-600">{filteredThemes.length}</span>
+                    </h2>
+                </div>
+
+                <div className="space-y-4">
+                    {filteredThemes.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                             <p>검색 결과가 없습니다.</p>
                         </div>
+                    ) : (
+                        filteredThemes.map((theme, index) => (
+                            <div key={`${theme.branchId}-${theme.id}`}>
+                                <ThemeCard theme={theme} />
+                                {/* Show AdBanner every 5 items */}
+                                {(index + 1) % 5 === 0 && index !== filteredThemes.length - 1 && (
+                                    <div className="mt-4">
+                                        <AdBanner />
+                                    </div>
+                                )}
+                            </div>
+                        ))
                     )}
                 </div>
             </div>
-
-            {/* Detail Modal */}
-            <CafeModal
-                cafe={selectedCafe}
-                isOpen={!!selectedCafe}
-                onClose={() => setSelectedCafe(null)}
-            />
         </div>
     );
 }

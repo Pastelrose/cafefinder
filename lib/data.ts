@@ -1,74 +1,81 @@
-import { Cafe } from "@/types";
+import { EscapeBranch } from "@/types";
 
-export const cafes: Cafe[] = [
+export const escapeBranches: EscapeBranch[] = [
     {
-        id: "1",
-        name: "Vintage Garden",
-        description: "도심 속에서 즐기는 앤틱한 분위기의 정원 카페입니다. 100년 된 고택을 개조하여 만든 공간으로, 사계절 내내 아름다운 정원 뷰를 감상할 수 있습니다. 조용한 클래식 음악과 함께 갓 구운 스콘과 홍차를 즐기며 바쁜 일상 속에서 잠시 쉬어가세요.",
-        address: "서울 중구 세종대로 110",
-        lat: 37.5665,
-        lng: 126.978,
-        images: [
-            "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop",
-        ],
-        tags: ["앤틱", "정원", "조용함", "디저트맛집"],
-        rating: 4.5,
-        websiteUrl: "https://example.com/vintage",
+        id: "branch-1",
+        brandName: "셜록홈즈",
+        branchName: "강남 1호점",
+        address: "서울 강남구 강남대로 123",
+        lat: 37.498095,
+        lng: 127.027610,
+        websiteUrl: "http://sherlock-holmes.co.kr",
+        themes: [
+            {
+                id: "theme-1-1",
+                name: "빛과 그림자",
+                description: "당신은 빛을 잃은 세상에서 유일한 희망입니다. 그림자 속에 숨겨진 비밀을 찾아 세상을 구하세요.",
+                posterUrl: "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1000&auto=format&fit=crop",
+                difficulty: 4,
+                fear: 2,
+                activity: 6,
+                recommendation: 8,
+                tags: ["판타지", "감성", "초보추천"]
+            },
+            {
+                id: "theme-1-2",
+                name: "지하감옥",
+                description: "억울하게 누명을 쓰고 갇힌 지하감옥. 처형까지 남은 시간은 60분. 간수가 자리를 비운 사이 탈출하라!",
+                posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000&auto=format&fit=crop",
+                difficulty: 7,
+                fear: 5,
+                activity: 3,
+                recommendation: 7,
+                tags: ["탈출", "스릴러"]
+            }
+        ]
     },
     {
-        id: "2",
-        name: "Modern Brew",
-        description: "미니멀한 인테리어와 직접 로스팅한 스페셜티 커피를 제공합니다. 매일 아침 큐그레이더가 엄선한 원두로 내리는 드립 커피의 향을 느껴보세요. 넓은 테이블과 콘센트가 구비되어 있어 노트북 작업이나 독서를 하기에도 최적의 장소입니다.",
-        address: "서울 중구 을지로 30",
-        lat: 37.5651,
-        lng: 126.989553,
-        images: [
-            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1000&auto=format&fit=crop",
-        ],
-        tags: ["모던", "스페셜티", "노트북하기좋은", "채광좋은"],
-        rating: 4.8,
-        websiteUrl: "https://example.com/modern",
+        id: "branch-2",
+        brandName: "키이스케이프",
+        branchName: "홍대점",
+        address: "서울 마포구 어울마당로 45",
+        lat: 37.556289,
+        lng: 126.922648,
+        websiteUrl: "http://keyescape.co.kr",
+        themes: [
+            {
+                id: "theme-2-1",
+                name: "삐릿-뽀",
+                description: "로봇이 지배하는 세상, 인간인 당신은 로봇인 척 연기하며 공장에 잠입해야 한다.",
+                posterUrl: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=1000&auto=format&fit=crop",
+                difficulty: 8,
+                fear: 1,
+                activity: 9,
+                recommendation: 10,
+                tags: ["SF", "활동성", "인생테마"]
+            }
+        ]
     },
     {
-        id: "3",
-        name: "Book & Tea",
-        description: "책 냄새 가득한 공간에서 다양한 차를 즐길 수 있는 북카페입니다. 5,000권 이상의 장서를 보유하고 있으며, 매달 새로운 큐레이션으로 독서의 즐거움을 더해드립니다. 향긋한 허브티와 함께 나만의 사색에 잠겨보세요.",
-        address: "서울 중구 퇴계로 100",
-        lat: 37.561,
-        lng: 126.994,
-        images: [
-            "https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=1000&auto=format&fit=crop",
-        ],
-        tags: ["북카페", "차", "조용함", "혼자가기좋은"],
-        rating: 4.2,
-        websiteUrl: "https://example.com/booktea",
-    },
-    {
-        id: "4",
-        name: "Urban Oasis",
-        description: "삭막한 도시 뷰를 즐기며 마시는 시원한 커피 한 잔. 루프탑에서 바라보는 서울의 야경은 그야말로 장관입니다. 낮에는 따스한 햇살을, 밤에는 화려한 불빛을 즐길 수 있는 도심 속 오아시스 같은 공간입니다.",
-        address: "서울 종로구 종로 50",
-        lat: 37.570,
-        lng: 126.982,
-        images: [
-            "https://images.unsplash.com/photo-1453614512568-c4024d13c247?q=80&w=1000&auto=format&fit=crop",
-        ],
-        tags: ["뷰맛집", "테라스", "데이트", "힙한"],
-        rating: 4.6,
-        websiteUrl: "https://example.com/oasis",
-    },
-    {
-        id: "5",
-        name: "Retro Vibe",
-        description: "80년대 감성을 그대로 재현한 레트로 컨셉 카페. 자개장, 옛날 TV, LP판 등 추억의 소품들로 가득 차 있어 사진 찍기에 좋습니다. 달달한 다방 커피와 옛날 팥빙수를 맛보며 시간 여행을 떠나보세요.",
-        address: "서울 중구 명동길 20",
-        lat: 37.563,
-        lng: 126.985,
-        images: [
-            "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?q=80&w=1000&auto=format&fit=crop",
-        ],
-        tags: ["레트로", "사진찍기좋은", "음악감상", "이색데이트"],
-        rating: 4.3,
-        websiteUrl: "https://example.com/retro",
-    },
+        id: "branch-3",
+        brandName: "비트포비아",
+        branchName: "강남던전",
+        address: "서울 강남구 테헤란로 101",
+        lat: 37.4985,
+        lng: 127.0285,
+        websiteUrl: "https://www.xphobia.net",
+        themes: [
+            {
+                id: "theme-3-1",
+                name: "강남목욕탕",
+                description: "강남 최고의 목욕탕에서 벌어지는 미스테리한 사건. 때밀이 아저씨의 비밀을 파헤쳐라.",
+                posterUrl: "https://images.unsplash.com/photo-1584622050111-993a426fbf0a?q=80&w=1000&auto=format&fit=crop",
+                difficulty: 5,
+                fear: 0,
+                activity: 4,
+                recommendation: 9,
+                tags: ["코믹", "이색테마"]
+            }
+        ]
+    }
 ];

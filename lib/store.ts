@@ -1,22 +1,22 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Cafe } from "@/types";
-import { cafes as initialCafes } from "@/lib/data";
+import { EscapeBranch, EscapeThemeDisplay } from "@/types";
+import { escapeBranches as initialBranches } from "@/lib/data";
 
 // --- User Store ---
 interface UserStore {
     nickname: string;
     notificationsEnabled: boolean;
-    isAdmin: boolean; // Admin status
+    isAdmin: boolean;
     setNickname: (nickname: string) => void;
     toggleNotifications: () => void;
-    toggleAdmin: () => void; // For testing purposes
+    toggleAdmin: () => void;
 }
 
 export const useUserStore = create<UserStore>()(
     persist(
         (set) => ({
-            nickname: "CoffeeLover",
+            nickname: "Escaper",
             notificationsEnabled: true,
             isAdmin: false,
             setNickname: (nickname) => set({ nickname }),
@@ -33,23 +33,23 @@ export const useUserStore = create<UserStore>()(
 
 // --- Favorite Store ---
 interface FavoriteStore {
-    favorites: string[]; // List of cafe IDs
-    addFavorite: (cafeId: string) => void;
-    removeFavorite: (cafeId: string) => void;
-    isFavorite: (cafeId: string) => boolean;
+    favorites: string[]; // List of Theme IDs
+    addFavorite: (themeId: string) => void;
+    removeFavorite: (themeId: string) => void;
+    isFavorite: (themeId: string) => boolean;
 }
 
 export const useFavoriteStore = create<FavoriteStore>()(
     persist(
         (set, get) => ({
             favorites: [],
-            addFavorite: (cafeId) =>
-                set((state) => ({ favorites: [...state.favorites, cafeId] })),
-            removeFavorite: (cafeId) =>
+            addFavorite: (themeId) =>
+                set((state) => ({ favorites: [...state.favorites, themeId] })),
+            removeFavorite: (themeId) =>
                 set((state) => ({
-                    favorites: state.favorites.filter((id) => id !== cafeId),
+                    favorites: state.favorites.filter((id) => id !== themeId),
                 })),
-            isFavorite: (cafeId) => get().favorites.includes(cafeId),
+            isFavorite: (themeId) => get().favorites.includes(themeId),
         }),
         {
             name: "favorite-storage",
@@ -58,84 +58,92 @@ export const useFavoriteStore = create<FavoriteStore>()(
     )
 );
 
-// --- Cafe Data Store (New) ---
-interface CafeStore {
-    cafes: Cafe[]; // Approved cafes
-    pendingCafes: Cafe[]; // Cafes waiting for approval
-    reportCafe: (cafe: Omit<Cafe, "id" | "rating" | "reviews" | "images">) => void;
-    approveCafe: (cafeId: string) => void;
-    rejectCafe: (cafeId: string) => void;
-    deleteCafe: (cafeId: string) => void; // Delete approved cafe (admin only)
+// --- Escape Data Store ---
+interface EscapeStore {
+    branches: EscapeBranch[];
+    pendingBranches: EscapeBranch[]; // For new reports (simplified for now)
+
+    // Actions
+    reportBranch: (branch: EscapeBranch) => void;
+    approveBranch: (branchId: string) => void;
+    rejectBranch: (branchId: string) => void;
+    deleteBranch: (branchId: string) => void;
+
+    // Selectors
+    getAllThemes: () => EscapeThemeDisplay[];
 }
 
-export const useCafeStore = create<CafeStore>()(
+export const useEscapeStore = create<EscapeStore>()(
     persist(
         (set, get) => ({
-            cafes: initialCafes, // Initialize with dummy data
-            pendingCafes: [],
+            branches: initialBranches,
+            pendingBranches: [],
 
-            reportCafe: (cafeData) => {
-                const newCafe: Cafe = {
-                    ...cafeData,
-                    id: `new-${Date.now()}`, // Generate temporary ID
-                    rating: 0, // New cafes start with 0 rating or "New" status
-                    images: ["https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop"], // Default placeholder image
-                };
-                set((state) => ({ pendingCafes: [...state.pendingCafes, newCafe] }));
+            reportBranch: (branch) => {
+                set((state) => ({ pendingBranches: [...state.pendingBranches, branch] }));
             },
 
-            approveCafe: (cafeId) => {
-                const { pendingCafes, cafes } = get();
-                const cafeToApprove = pendingCafes.find((c) => c.id === cafeId);
+            approveBranch: (branchId) => {
+                const { pendingBranches, branches } = get();
+                const branchToApprove = pendingBranches.find((b) => b.id === branchId);
 
-                if (cafeToApprove) {
-                    // Assign a proper rating or keep it 0
-                    const approvedCafe = { ...cafeToApprove, rating: 4.5 };
+                if (branchToApprove) {
                     set({
-                        cafes: [...cafes, approvedCafe],
-                        pendingCafes: pendingCafes.filter((c) => c.id !== cafeId),
+                        branches: [...branches, branchToApprove],
+                        pendingBranches: pendingBranches.filter((b) => b.id !== branchId),
                     });
                 }
             },
 
-            rejectCafe: (cafeId) => {
+            rejectBranch: (branchId) => {
                 set((state) => ({
-                    pendingCafes: state.pendingCafes.filter((c) => c.id !== cafeId),
+                    pendingBranches: state.pendingBranches.filter((b) => b.id !== branchId),
                 }));
             },
 
-            deleteCafe: (cafeId) => {
+            deleteBranch: (branchId) => {
                 set((state) => ({
-                    cafes: state.cafes.filter((c) => c.id !== cafeId),
+                    branches: state.branches.filter((b) => b.id !== branchId),
                 }));
+            },
+
+            getAllThemes: () => {
+                const { branches } = get();
+                const allThemes: EscapeThemeDisplay[] = [];
+
+                branches.forEach((branch) => {
+                    branch.themes.forEach((theme) => {
+                        allThemes.push({
+                            ...theme,
+                            branchId: branch.id,
+                            brandName: branch.brandName,
+                            branchName: branch.branchName,
+                            address: branch.address,
+                            location: { lat: branch.lat, lng: branch.lng },
+                        });
+                    });
+                });
+
+                return allThemes;
             },
         }),
         {
-            name: "cafe-data-storage-v2", // Version bump to clear old invalid data
+            name: "escape-data-storage",
             storage: createJSONStorage(() => localStorage),
-            merge: (persistedState: any, currentState) => {
-                // 1. Get initial cafes from the current state (which comes from lib/data.ts)
-                const initialCafes = currentState.cafes;
-
-                // 2. Get persisted cafes from storage
-                const persistedCafes = persistedState.cafes || [];
-
-                // 3. Create a Set of initial cafe IDs for efficient lookup
-                const initialCafeIds = new Set(initialCafes.map((c) => c.id));
-
-                // 4. Filter out cafes from persisted state that are already in initial data
-                // (This ensures we use the latest version from lib/data.ts)
-                const userAddedCafes = persistedCafes.filter((c: Cafe) => !initialCafeIds.has(c.id));
-
-                // 5. Merge: Initial Data (Primary) + User Added Data (Secondary)
-                const mergedCafes = [...initialCafes, ...userAddedCafes];
+            merge: (persistedState: unknown, currentState) => {
+                // Simple merge strategy: Always prioritize initial data for existing IDs
+                // This is a simplified version of the previous logic
+                const initialBranches = currentState.branches;
+                const persisted = persistedState as Partial<EscapeStore>;
+                const persistedBranches = persisted.branches || [];
+                const initialIds = new Set(initialBranches.map((b) => b.id));
+                const userAddedBranches = persistedBranches.filter((b: EscapeBranch) => !initialIds.has(b.id));
 
                 return {
                     ...currentState,
-                    ...persistedState,
-                    cafes: mergedCafes,
-                    // Keep pending cafes as is
-                    pendingCafes: persistedState.pendingCafes || [],
+                    ...persisted,
+                    branches: [...initialBranches, ...userAddedBranches],
+                    pendingBranches: persisted.pendingBranches || [],
                 };
             },
         }

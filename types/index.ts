@@ -1,16 +1,36 @@
-export interface Cafe {
+export interface EscapeTheme {
     id: string;
-    name: string;
-export interface Cafe {
-    id: string;
-    name: string;
+    name: string; // Theme Name (e.g. "Murder on the Orient Express")
     description: string;
+    posterUrl: string; // Image URL
+
+    // Scores (1-10)
+    difficulty: number;
+    fear: number;
+    activity: number;
+    recommendation: number; // User satisfaction/recommendation score
+
+    tags: string[];
+}
+
+export interface EscapeBranch {
+    id: string;
+    brandName: string; // e.g. "Sherlock Holmes"
+    branchName: string; // e.g. "Gangnam 1st Branch"
     address: string;
     lat: number;
     lng: number;
-    images: string[];
-    tags: string[];
-    rating: number;
-    isFavorite?: boolean;
     websiteUrl?: string;
+    phone?: string;
+
+    themes: EscapeTheme[]; // 1:N relationship
+}
+
+// Helper type for flat list view (Theme + Branch Info)
+export interface EscapeThemeDisplay extends EscapeTheme {
+    branchId: string;
+    brandName: string;
+    branchName: string;
+    address: string;
+    location: { lat: number; lng: number };
 }
