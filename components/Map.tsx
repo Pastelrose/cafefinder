@@ -101,7 +101,7 @@ function clusterBranches(branches: EscapeBranch[], distance: number = 0.05): Arr
 }
 
 export default function MapComponent() {
-    const { branches } = useEscapeStore();
+    const { branches, fetchBranches } = useEscapeStore();
     const [filteredBranches, setFilteredBranches] = useState<EscapeBranch[]>([]);
     const [mapCenter, setMapCenter] = useState<[number, number]>([37.498095, 127.027610]); // Default Gangnam
     const [mounted, setMounted] = useState(false);
@@ -109,8 +109,17 @@ export default function MapComponent() {
 
     useEffect(() => {
         setMounted(true);
-        setFilteredBranches(branches);
+        // Load branches from API
+        fetchBranches();
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Initialize filtered branches when branches change
+    useEffect(() => {
+        setFilteredBranches(branches);
+        if (branches.length > 0) {
+            setMapCenter([branches[0].lat, branches[0].lng]);
+        }
     }, [branches]);
 
     const handleSearch = useCallback((query: string) => {
@@ -137,18 +146,28 @@ export default function MapComponent() {
     }, [branches]);
 
     const handleFilterChange = useCallback((filters: FilterState) => {
-        // Filter logic: A branch is shown if it has AT LEAST ONE theme matching the filters
+        // Filter branches based on theme scores
         const filtered = branches.filter((branch) => {
+            // A branch is included if it has at least one theme matching all filters
             return branch.themes.some((theme) => {
-                const matchDiff = theme.difficulty >= filters.difficulty[0] && theme.difficulty <= filters.difficulty[1];
-                const matchFear = theme.fear >= filters.fear[0] && theme.fear <= filters.fear[1];
-                const matchAct = theme.activity >= filters.activity[0] && theme.activity <= filters.activity[1];
-                const matchRec = theme.recommendation >= filters.recommendation[0] && theme.recommendation <= filters.recommendation[1];
+                const matchDifficulty = theme.pointDifficulty >= filters.pointDifficulty[0] &&
+                                       theme.pointDifficulty <= filters.pointDifficulty[1];
+                const matchFear = theme.pointFear >= filters.pointFear[0] &&
+                                 theme.pointFear <= filters.pointFear[1];
+                const matchActivity = theme.pointActivity >= filters.pointActivity[0] &&
+                                     theme.pointActivity <= filters.pointActivity[1];
+                const matchRecommendation = theme.pointRecommendation >= filters.pointRecommendation[0] &&
+                                           theme.pointRecommendation <= filters.pointRecommendation[1];
 
-                return matchDiff && matchFear && matchAct && matchRec;
+                return matchDifficulty && matchFear && matchActivity && matchRecommendation;
             });
         });
+
         setFilteredBranches(filtered);
+
+        if (filtered.length > 0) {
+            setMapCenter([filtered[0].lat, filtered[0].lng]);
+        }
     }, [branches]);
 
     const handleZoomChange = useCallback((zoom: number) => {
@@ -227,14 +246,14 @@ export default function MapComponent() {
                                             href={branch.websiteUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex-1 rounded-lg bg-blue-50 py-2 text-center text-xs font-medium text-blue-600 hover:bg-blue-100"
+                                            className="flex-1 rounded-lg bg-white border-2 border-blue-300 py-2 text-center text-xs font-medium text-blue-600 hover:bg-blue-50"
                                         >
                                             홈페이지
                                         </a>
                                     )}
                                     <Link
-                                        href={`/list?search=${branch.brandName}`}
-                                        className="flex-1 rounded-lg bg-gray-900 py-2 text-center text-xs font-medium text-white hover:bg-gray-800"
+                                        href={`/list?search=${encodeURIComponent(branch.brandName)}`}
+                                        className="flex-1 rounded-lg bg-white border-2 border-blue-500 py-2 text-center text-xs font-medium text-blue-600 hover:bg-blue-50"
                                     >
                                         테마 보기
                                     </Link>

@@ -5,6 +5,7 @@ import { User, Bell, ChevronRight, Settings, Edit2, PlusCircle, Shield, ShieldCh
 import { useUserStore, useEscapeStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import ReportCafeModal from "@/components/ReportCafeModal";
+import ReportThemeModal from "@/components/ReportThemeModal";
 import AdminApprovalModal from "@/components/AdminApprovalModal";
 import DeleteCafeModal from "@/components/DeleteCafeModal";
 
@@ -16,6 +17,7 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [tempNickname, setTempNickname] = useState("");
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isThemeReportModalOpen, setIsThemeReportModalOpen] = useState(false);
     const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -183,18 +185,35 @@ export default function ProfilePage() {
                         <ChevronRight className="h-5 w-5 text-gray-400" />
                     </div>
 
-                    {/* Report Cafe Button */}
+                    {/* Report Branch Button */}
                     <div
                         onClick={() => setIsReportModalOpen(true)}
-                        className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
+                        className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
                     >
                         <div className="flex items-center gap-3">
                             <div className="rounded-full bg-blue-100 p-2 text-blue-600">
                                 <PlusCircle className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="font-medium text-gray-900">새로운 방탈출 제보하기</p>
-                                <p className="text-xs text-gray-500">나만 아는 방탈출을 공유해주세요</p>
+                                <p className="font-medium text-gray-900">방탈출 카페 제보</p>
+                                <p className="text-xs text-gray-500">새로운 방탈출 카페를 공유해주세요</p>
+                            </div>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                    </div>
+
+                    {/* Report Theme Button */}
+                    <div
+                        onClick={() => setIsThemeReportModalOpen(true)}
+                        className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-green-100 p-2 text-green-600">
+                                <PlusCircle className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-gray-900">테마 제보</p>
+                                <p className="text-xs text-gray-500">기존 카페에 새 테마를 추가해주세요</p>
                             </div>
                         </div>
                         <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -205,6 +224,11 @@ export default function ProfilePage() {
             <ReportCafeModal
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
+            />
+
+            <ReportThemeModal
+                isOpen={isThemeReportModalOpen}
+                onClose={() => setIsThemeReportModalOpen(false)}
             />
 
             <AdminApprovalModal

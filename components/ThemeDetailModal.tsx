@@ -47,6 +47,7 @@ export default function ThemeDetailModal({ theme, isOpen, onClose }: ThemeDetail
     const { getAverageScores } = useReviewStore();
     const [mounted, setMounted] = useState(false);
     const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -57,18 +58,23 @@ export default function ThemeDetailModal({ theme, isOpen, onClose }: ThemeDetail
     const isLiked = mounted ? isFavorite(theme.id) : false;
     const averageScores = mounted ? getAverageScores(theme.id) : null;
 
+    // Use placeholder image if posterUrl is missing or failed to load
+    const imageSrc = imageError || !theme.posterUrl
+        ? "/escape-room-placeholder.png"
+        : theme.posterUrl;
+
     // Use average scores if available, otherwise fallback to theme defaults
     // Note: Theme defaults are static, reviews are dynamic user input.
     const displayScores = averageScores ? {
-        difficulty: averageScores.difficulty,
-        fear: averageScores.fear,
-        activity: averageScores.activity,
-        recommendation: averageScores.recommendation
+        pointDifficulty: averageScores.pointDifficulty,
+        pointFear: averageScores.pointFear,
+        pointActivity: averageScores.pointActivity,
+        pointRecommendation: averageScores.pointRecommendation
     } : {
-        difficulty: theme.difficulty,
-        fear: theme.fear,
-        activity: theme.activity,
-        recommendation: theme.recommendation
+        pointDifficulty: theme.pointDifficulty,
+        pointFear: theme.pointFear,
+        pointActivity: theme.pointActivity,
+        pointRecommendation: theme.pointRecommendation
     };
 
     const handleFavoriteClick = () => {
@@ -96,11 +102,12 @@ export default function ThemeDetailModal({ theme, isOpen, onClose }: ThemeDetail
                         {/* Image Header */}
                         <div className="relative h-64 w-full bg-gray-100">
                             <Image
-                                src={theme.posterUrl}
+                                src={imageSrc}
                                 alt={theme.name}
                                 fill
                                 className="object-cover"
                                 sizes="800px"
+                                onError={() => setImageError(true)}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -158,10 +165,10 @@ export default function ThemeDetailModal({ theme, isOpen, onClose }: ThemeDetail
                                     )}
                                 </div>
                                 <div className="space-y-3">
-                                    <ScoreItem label="난이도" score={displayScores.difficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
-                                    <ScoreItem label="공포도" score={displayScores.fear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
-                                    <ScoreItem label="활동성" score={displayScores.activity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
-                                    <ScoreItem label="추천도" score={displayScores.recommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
+                                    <ScoreItem label="난이도" score={displayScores.pointDifficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
+                                    <ScoreItem label="공포도" score={displayScores.pointFear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
+                                    <ScoreItem label="활동성" score={displayScores.pointActivity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
+                                    <ScoreItem label="추천도" score={displayScores.pointRecommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
                                 </div>
                             </div>
 

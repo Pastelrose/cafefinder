@@ -21,9 +21,12 @@ export default function FavoritePage() {
 
     useEffect(() => {
         if (mounted) {
-            const allThemes = getAllThemes();
-            const filtered = allThemes.filter((theme) => favorites.includes(theme.id));
-            setFavoriteThemes(filtered);
+            const loadFavoriteThemes = async () => {
+                const allThemes = await getAllThemes();
+                const filtered = allThemes.filter((theme) => favorites.includes(theme.id));
+                setFavoriteThemes(filtered);
+            };
+            loadFavoriteThemes();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mounted, favorites]);

@@ -5,10 +5,10 @@ export interface EscapeTheme {
     posterUrl: string; // Image URL
 
     // Scores (1-10)
-    difficulty: number;
-    fear: number;
-    activity: number;
-    recommendation: number; // User satisfaction/recommendation score
+    pointDifficulty: number;
+    pointFear: number;
+    pointActivity: number;
+    pointRecommendation: number; // User satisfaction/recommendation score
 
     tags: string[];
 }

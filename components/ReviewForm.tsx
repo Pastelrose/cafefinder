@@ -5,7 +5,6 @@ import { Star, Ghost, Activity, ThumbsUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReviewStore } from "@/lib/reviewStore";
 import { useUserStore } from "@/lib/store";
-import { v4 as uuidv4 } from "uuid";
 
 interface ReviewFormProps {
     themeId: string;
@@ -54,29 +53,32 @@ export default function ReviewForm({ themeId, onClose }: ReviewFormProps) {
     const { addReview } = useReviewStore();
     const { nickname } = useUserStore();
 
-    const [difficulty, setDifficulty] = useState(5);
-    const [fear, setFear] = useState(5);
-    const [activity, setActivity] = useState(5);
-    const [recommendation, setRecommendation] = useState(5);
+    const [pointDifficulty, setPointDifficulty] = useState(5);
+    const [pointFear, setPointFear] = useState(5);
+    const [pointActivity, setPointActivity] = useState(5);
+    const [pointRecommendation, setPointRecommendation] = useState(5);
     const [comment, setComment] = useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const newReview = {
-            id: uuidv4(),
             themeId,
             nickname,
-            difficulty,
-            fear,
-            activity,
-            recommendation,
+            pointDifficulty,
+            pointFear,
+            pointActivity,
+            pointRecommendation,
             comment,
-            createdAt: new Date().toISOString(),
         };
 
-        addReview(newReview);
-        onClose();
+        try {
+            await addReview(newReview);
+            onClose();
+        } catch (error) {
+            console.error('Failed to submit review:', error);
+            alert('리뷰 작성에 실패했습니다. 다시 시도해주세요.');
+        }
     };
 
     return (
@@ -96,29 +98,29 @@ export default function ReviewForm({ themeId, onClose }: ReviewFormProps) {
                     <div className="mb-6 space-y-4">
                         <RatingInput
                             label="난이도"
-                            value={difficulty}
-                            onChange={setDifficulty}
+                            value={pointDifficulty}
+                            onChange={setPointDifficulty}
                             icon={Star}
                             colorClass="text-yellow-500"
                         />
                         <RatingInput
                             label="공포도"
-                            value={fear}
-                            onChange={setFear}
+                            value={pointFear}
+                            onChange={setPointFear}
                             icon={Ghost}
                             colorClass="text-purple-500"
                         />
                         <RatingInput
                             label="활동성"
-                            value={activity}
-                            onChange={setActivity}
+                            value={pointActivity}
+                            onChange={setPointActivity}
                             icon={Activity}
                             colorClass="text-blue-500"
                         />
                         <RatingInput
                             label="추천도"
-                            value={recommendation}
-                            onChange={setRecommendation}
+                            value={pointRecommendation}
+                            onChange={setPointRecommendation}
                             icon={ThumbsUp}
                             colorClass="text-green-500"
                         />

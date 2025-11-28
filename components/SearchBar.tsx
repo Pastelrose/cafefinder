@@ -7,13 +7,14 @@ import { cn } from "@/lib/utils";
 interface SearchBarProps {
     onSearch: (query: string) => void;
     onFilterChange: (filters: FilterState) => void;
+    initialQuery?: string;
 }
 
 export interface FilterState {
-    difficulty: [number, number];
-    fear: [number, number];
-    activity: [number, number];
-    recommendation: [number, number];
+    pointDifficulty: [number, number];
+    pointFear: [number, number];
+    pointActivity: [number, number];
+    pointRecommendation: [number, number];
 }
 
 interface FilterSliderProps {
@@ -95,15 +96,22 @@ const FilterSlider = ({
     </div>
 );
 
-export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) {
-    const [query, setQuery] = useState("");
+export default function SearchBar({ onSearch, onFilterChange, initialQuery = "" }: SearchBarProps) {
+    const [query, setQuery] = useState(initialQuery);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>({
-        difficulty: [0, 10],
-        fear: [0, 10],
-        activity: [0, 10],
-        recommendation: [0, 10],
+        pointDifficulty: [0, 10],
+        pointFear: [0, 10],
+        pointActivity: [0, 10],
+        pointRecommendation: [0, 10],
     });
+
+    // Update query when initialQuery changes
+    useEffect(() => {
+        if (initialQuery) {
+            setQuery(initialQuery);
+        }
+    }, [initialQuery]);
 
     // Debounce search
     useEffect(() => {
@@ -157,10 +165,10 @@ export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) 
                         <h3 className="font-bold text-gray-900">상세 필터</h3>
                         <button
                             onClick={() => setFilters({
-                                difficulty: [0, 10],
-                                fear: [0, 10],
-                                activity: [0, 10],
-                                recommendation: [0, 10],
+                                pointDifficulty: [0, 10],
+                                pointFear: [0, 10],
+                                pointActivity: [0, 10],
+                                pointRecommendation: [0, 10],
                             })}
                             className="text-xs text-gray-500 underline hover:text-gray-800"
                         >
@@ -172,7 +180,7 @@ export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) 
                         <FilterSlider
                             label="난이도"
                             icon={Star}
-                            filterKey="difficulty"
+                            filterKey="pointDifficulty"
                             colorClass="text-yellow-500"
                             filters={filters}
                             handleRangeChange={handleRangeChange}
@@ -180,7 +188,7 @@ export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) 
                         <FilterSlider
                             label="공포도"
                             icon={Ghost}
-                            filterKey="fear"
+                            filterKey="pointFear"
                             colorClass="text-purple-500"
                             filters={filters}
                             handleRangeChange={handleRangeChange}
@@ -188,7 +196,7 @@ export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) 
                         <FilterSlider
                             label="활동성"
                             icon={Activity}
-                            filterKey="activity"
+                            filterKey="pointActivity"
                             colorClass="text-blue-500"
                             filters={filters}
                             handleRangeChange={handleRangeChange}
@@ -196,7 +204,7 @@ export default function SearchBar({ onSearch, onFilterChange }: SearchBarProps) 
                         <FilterSlider
                             label="추천도"
                             icon={ThumbsUp}
-                            filterKey="recommendation"
+                            filterKey="pointRecommendation"
                             colorClass="text-green-500"
                             filters={filters}
                             handleRangeChange={handleRangeChange}

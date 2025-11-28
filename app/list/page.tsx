@@ -10,7 +10,7 @@ import { EscapeThemeDisplay } from "@/types";
 import { useSearchParams } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
 
-type SortOption = "recommendation" | "difficulty" | "activity" | "fear";
+type SortOption = "pointRecommendation" | "pointDifficulty" | "pointActivity" | "pointFear";
 
 export default function ListPage() {
     const { getAllThemes } = useEscapeStore();
@@ -22,28 +22,31 @@ export default function ListPage() {
     const [mounted, setMounted] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState<EscapeThemeDisplay | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [sortBy, setSortBy] = useState<SortOption>("recommendation");
+    const [sortBy, setSortBy] = useState<SortOption>("pointRecommendation");
     const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        const allThemes = getAllThemes();
-        setThemes(allThemes);
+        const loadThemes = async () => {
+            const allThemes = await getAllThemes();
+            setThemes(allThemes);
 
-        // Initial filter if search param exists
-        if (initialQuery) {
-            const lowerQuery = initialQuery.toLowerCase();
-            const filtered = allThemes.filter((theme) => {
-                return (
-                    theme.brandName.toLowerCase().includes(lowerQuery) ||
-                    theme.branchName.toLowerCase().includes(lowerQuery) ||
-                    theme.name.toLowerCase().includes(lowerQuery)
-                );
-            });
-            setFilteredThemes(filtered);
-        } else {
-            setFilteredThemes(allThemes);
-        }
+            // Initial filter if search param exists
+            if (initialQuery) {
+                const lowerQuery = initialQuery.toLowerCase();
+                const filtered = allThemes.filter((theme) => {
+                    return (
+                        theme.brandName.toLowerCase().includes(lowerQuery) ||
+                        theme.branchName.toLowerCase().includes(lowerQuery) ||
+                        theme.name.toLowerCase().includes(lowerQuery)
+                    );
+                });
+                setFilteredThemes(filtered);
+            } else {
+                setFilteredThemes(allThemes);
+            }
+        };
+        loadThemes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getAllThemes, initialQuery]);
 
@@ -66,10 +69,10 @@ export default function ListPage() {
 
     const handleFilterChange = useCallback((filters: FilterState) => {
         const filtered = themes.filter((theme) => {
-            const matchDiff = theme.difficulty >= filters.difficulty[0] && theme.difficulty <= filters.difficulty[1];
-            const matchFear = theme.fear >= filters.fear[0] && theme.fear <= filters.fear[1];
-            const matchAct = theme.activity >= filters.activity[0] && theme.activity <= filters.activity[1];
-            const matchRec = theme.recommendation >= filters.recommendation[0] && theme.recommendation <= filters.recommendation[1];
+            const matchDiff = theme.pointDifficulty >= filters.pointDifficulty[0] && theme.pointDifficulty <= filters.pointDifficulty[1];
+            const matchFear = theme.pointFear >= filters.pointFear[0] && theme.pointFear <= filters.pointFear[1];
+            const matchAct = theme.pointActivity >= filters.pointActivity[0] && theme.pointActivity <= filters.pointActivity[1];
+            const matchRec = theme.pointRecommendation >= filters.pointRecommendation[0] && theme.pointRecommendation <= filters.pointRecommendation[1];
 
             return matchDiff && matchFear && matchAct && matchRec;
         });
@@ -104,7 +107,11 @@ export default function ListPage() {
         <div className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-white px-4 py-3 shadow-sm">
-                <SearchBar onSearch={handleSearch} onFilterChange={handleFilterChange} />
+                <SearchBar
+                    onSearch={handleSearch}
+                    onFilterChange={handleFilterChange}
+                    initialQuery={initialQuery}
+                />
             </div>
 
             {/* Content */}
@@ -129,40 +136,40 @@ export default function ListPage() {
                             <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-20">
                                 <button
                                     onClick={() => {
-                                        setSortBy("recommendation");
+                                        setSortBy("pointRecommendation");
                                         setIsSortDropdownOpen(false);
                                     }}
-                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 first:rounded-t-lg ${sortBy === "recommendation" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
+                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 first:rounded-t-lg ${sortBy === "pointRecommendation" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
                                         }`}
                                 >
                                     추천도 순
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setSortBy("difficulty");
+                                        setSortBy("pointDifficulty");
                                         setIsSortDropdownOpen(false);
                                     }}
-                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${sortBy === "difficulty" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
+                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${sortBy === "pointDifficulty" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
                                         }`}
                                 >
                                     난이도 순
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setSortBy("activity");
+                                        setSortBy("pointActivity");
                                         setIsSortDropdownOpen(false);
                                     }}
-                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${sortBy === "activity" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
+                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${sortBy === "pointActivity" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
                                         }`}
                                 >
                                     활동성 순
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setSortBy("fear");
+                                        setSortBy("pointFear");
                                         setIsSortDropdownOpen(false);
                                     }}
-                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 last:rounded-b-lg ${sortBy === "fear" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
+                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 last:rounded-b-lg ${sortBy === "pointFear" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
                                         }`}
                                 >
                                     공포도 순
@@ -179,7 +186,7 @@ export default function ListPage() {
                         </div>
                     ) : (
                         filteredThemes.map((theme, index) => (
-                            <div key={`${theme.branchId}-${theme.id}`}>
+                            <div key={`${theme.branchId}-${theme.id}-${index}`}>
                                 <ThemeCard theme={theme} onClick={() => handleThemeClick(theme)} />
                                 {/* Show AdBanner every 5 items */}
                                 {(index + 1) % 5 === 0 && index !== filteredThemes.length - 1 && (

@@ -40,6 +40,7 @@ const ScoreBar = ({ label, score, icon: Icon, colorClass, bgClass }: ScoreBarPro
 export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
     const { isFavorite, addFavorite, removeFavorite } = useFavoriteStore();
     const [mounted, setMounted] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -47,6 +48,11 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
     }, []);
 
     const isLiked = mounted ? isFavorite(theme.id) : false;
+
+    // Use placeholder image if posterUrl is missing or failed to load
+    const imageSrc = imageError || !theme.posterUrl
+        ? "/escape-room-placeholder.png"
+        : theme.posterUrl;
 
     const handleFavoriteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -65,11 +71,12 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
             {/* Image Section */}
             <div className="relative h-48 w-full shrink-0 overflow-hidden bg-gray-100 sm:h-auto sm:w-40">
                 <Image
-                    src={theme.posterUrl}
+                    src={imageSrc}
                     alt={theme.name}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, 160px"
+                    onError={() => setImageError(true)}
                 />
                 <button
                     onClick={handleFavoriteClick}
@@ -113,10 +120,10 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
 
                 {/* Scores Grid */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <ScoreBar label="난이도" score={theme.difficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
-                    <ScoreBar label="공포도" score={theme.fear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
-                    <ScoreBar label="활동성" score={theme.activity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
-                    <ScoreBar label="추천도" score={theme.recommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
+                    <ScoreBar label="난이도" score={theme.pointDifficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
+                    <ScoreBar label="공포도" score={theme.pointFear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
+                    <ScoreBar label="활동성" score={theme.pointActivity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
+                    <ScoreBar label="추천도" score={theme.pointRecommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
                 </div>
 
                 {/* Homepage Link */}
