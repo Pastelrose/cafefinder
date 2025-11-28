@@ -164,3 +164,15 @@ export const userApi = {
         return result.data;
     },
 };
+
+// Advertisement API
+export const advertisementApi = {
+    async getAll() {
+        const response = await fetch(`${API_BASE_URL}/advertisements`);
+        const result: ApiResponse<any[]> = await response.json();
+        if (!result.success) {
+            throw new Error(result.error?.message || 'Failed to fetch advertisements');
+        }
+        return result.data || [];
+    },
+};

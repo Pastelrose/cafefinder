@@ -146,28 +146,18 @@ export default function MapComponent() {
     }, [branches]);
 
     const handleFilterChange = useCallback((filters: FilterState) => {
-        // Filter branches based on theme scores
+        // Filter logic: A branch is shown if it has AT LEAST ONE theme matching the filters
         const filtered = branches.filter((branch) => {
-            // A branch is included if it has at least one theme matching all filters
             return branch.themes.some((theme) => {
-                const matchDifficulty = theme.pointDifficulty >= filters.pointDifficulty[0] &&
-                                       theme.pointDifficulty <= filters.pointDifficulty[1];
-                const matchFear = theme.pointFear >= filters.pointFear[0] &&
-                                 theme.pointFear <= filters.pointFear[1];
-                const matchActivity = theme.pointActivity >= filters.pointActivity[0] &&
-                                     theme.pointActivity <= filters.pointActivity[1];
-                const matchRecommendation = theme.pointRecommendation >= filters.pointRecommendation[0] &&
-                                           theme.pointRecommendation <= filters.pointRecommendation[1];
+                const matchDiff = theme.pointDifficulty >= filters.pointDifficulty[0] && theme.pointDifficulty <= filters.pointDifficulty[1];
+                const matchFear = theme.pointFear >= filters.pointFear[0] && theme.pointFear <= filters.pointFear[1];
+                const matchAct = theme.pointActivity >= filters.pointActivity[0] && theme.pointActivity <= filters.pointActivity[1];
+                const matchRec = theme.pointRecommendation >= filters.pointRecommendation[0] && theme.pointRecommendation <= filters.pointRecommendation[1];
 
-                return matchDifficulty && matchFear && matchActivity && matchRecommendation;
+                return matchDiff && matchFear && matchAct && matchRec;
             });
         });
-
         setFilteredBranches(filtered);
-
-        if (filtered.length > 0) {
-            setMapCenter([filtered[0].lat, filtered[0].lng]);
-        }
     }, [branches]);
 
     const handleZoomChange = useCallback((zoom: number) => {

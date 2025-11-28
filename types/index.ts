@@ -35,3 +35,13 @@ export interface EscapeThemeDisplay extends EscapeTheme {
     location: { lat: number; lng: number };
     websiteUrl?: string;
 }
+
+export interface Advertisement {
+    id: string;
+    title: string;
+    description: string;
+    imageUrl: string;
+    linkUrl: string;
+    linkText: string;
+    displayOrder: number;
+}

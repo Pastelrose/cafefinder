@@ -1,26 +1,55 @@
-import { ExternalLink } from "lucide-react";
+"use client";
 
-export default function AdBanner() {
+import Image from "next/image";
+import { ExternalLink } from "lucide-react";
+import { Advertisement } from "@/types";
+
+interface AdBannerProps {
+    advertisement: Advertisement;
+}
+
+export default function AdBanner({ advertisement }: AdBannerProps) {
     return (
-        <div className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
-                <span className="text-xs font-bold text-gray-500">Sponsored</span>
-                <ExternalLink className="h-3 w-3 text-gray-400" />
-            </div>
-            <div className="flex items-center gap-4 p-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-2xl">
-                    ☕
+        <a
+            href={advertisement.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm transition-all hover:shadow-md sm:flex-row sm:min-h-48"
+        >
+            {/* Image Section */}
+            <div className="relative h-48 w-full shrink-0 overflow-hidden bg-gray-100 sm:h-auto sm:w-40">
+                <Image
+                    src={advertisement.imageUrl}
+                    alt={advertisement.title}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, 160px"
+                />
+                <div className="absolute left-2 top-2 rounded-full bg-blue-600 px-2 py-1 text-xs font-bold text-white">
+                    AD
                 </div>
-                <div className="flex flex-col">
-                    <h3 className="font-bold text-gray-900">프리미엄 원두 정기구독</h3>
-                    <p className="text-sm text-gray-600">
-                        집에서 즐기는 바리스타의 맛, 첫 달 50% 할인!
+            </div>
+
+            {/* Content Section */}
+            <div className="flex flex-1 flex-col justify-between p-4">
+                <div>
+                    {/* Title */}
+                    <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1">
+                        {advertisement.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="mb-3 text-sm text-gray-600 line-clamp-2">
+                        {advertisement.description}
                     </p>
-                    <span className="mt-1 text-xs text-blue-600 font-medium">
-                        지금 확인하기 &rarr;
-                    </span>
+                </div>
+
+                {/* Link Button */}
+                <div className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+                    <ExternalLink className="h-4 w-4" />
+                    {advertisement.linkText}
                 </div>
             </div>
-        </div>
+        </a>
     );
 }

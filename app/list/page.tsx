@@ -6,9 +6,10 @@ import ThemeCard from "@/components/ThemeCard";
 import ThemeDetailModal from "@/components/ThemeDetailModal";
 import AdBanner from "@/components/AdBanner";
 import { useEscapeStore } from "@/lib/store";
-import { EscapeThemeDisplay } from "@/types";
+import { EscapeThemeDisplay, Advertisement } from "@/types";
 import { useSearchParams } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
+import { advertisementApi } from "@/lib/api";
 
 type SortOption = "pointRecommendation" | "pointDifficulty" | "pointActivity" | "pointFear";
 
@@ -19,6 +20,7 @@ export default function ListPage() {
 
     const [themes, setThemes] = useState<EscapeThemeDisplay[]>([]);
     const [filteredThemes, setFilteredThemes] = useState<EscapeThemeDisplay[]>([]);
+    const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
     const [mounted, setMounted] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState<EscapeThemeDisplay | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +48,28 @@ export default function ListPage() {
                 setFilteredThemes(allThemes);
             }
         };
+
+        const loadAdvertisements = async () => {
+            try {
+                const ads = await advertisementApi.getAll();
+                // Transform backend data to frontend format
+                const transformedAds: Advertisement[] = ads.map((ad: any) => ({
+                    id: String(ad.id),
+                    title: ad.title,
+                    description: ad.description,
+                    imageUrl: ad.imageUrl,
+                    linkUrl: ad.linkUrl,
+                    linkText: ad.linkText,
+                    displayOrder: ad.displayOrder
+                }));
+                setAdvertisements(transformedAds);
+            } catch (error) {
+                console.error('Failed to load advertisements:', error);
+            }
+        };
+
         loadThemes();
+        loadAdvertisements();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getAllThemes, initialQuery]);
 
@@ -185,17 +208,23 @@ export default function ListPage() {
                             <p>검색 결과가 없습니다.</p>
                         </div>
                     ) : (
-                        filteredThemes.map((theme, index) => (
-                            <div key={`${theme.branchId}-${theme.id}-${index}`}>
-                                <ThemeCard theme={theme} onClick={() => handleThemeClick(theme)} />
-                                {/* Show AdBanner every 5 items */}
-                                {(index + 1) % 5 === 0 && index !== filteredThemes.length - 1 && (
-                                    <div className="mt-4">
-                                        <AdBanner />
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                        filteredThemes.map((theme, index) => {
+                            // Calculate which ad to show (cycle through ads)
+                            const adIndex = Math.floor(index / 5) % advertisements.length;
+                            const shouldShowAd = (index + 1) % 5 === 0 && index !== filteredThemes.length - 1 && advertisements.length > 0;
+
+                            return (
+                                <div key={`${theme.branchId}-${theme.id}-${index}`}>
+                                    <ThemeCard theme={theme} onClick={() => handleThemeClick(theme)} />
+                                    {/* Show AdBanner every 5 items */}
+                                    {shouldShowAd && (
+                                        <div className="mt-4">
+                                            <AdBanner advertisement={advertisements[adIndex]} />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             </div>

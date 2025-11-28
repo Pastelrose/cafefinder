@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useFavoriteStore } from "@/lib/store";
 import { EscapeThemeDisplay } from "@/types";
 import { useEffect, useState } from "react";
+import { useReviewStore } from "@/lib/reviewStore";
 
 interface ThemeCardProps {
     theme: EscapeThemeDisplay;
@@ -39,6 +40,7 @@ const ScoreBar = ({ label, score, icon: Icon, colorClass, bgClass }: ScoreBarPro
 
 export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
     const { isFavorite, addFavorite, removeFavorite } = useFavoriteStore();
+    const { getAverageScores } = useReviewStore();
     const [mounted, setMounted] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -48,11 +50,25 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
     }, []);
 
     const isLiked = mounted ? isFavorite(theme.id) : false;
+    const averageScores = mounted ? getAverageScores(theme.id) : null;
 
     // Use placeholder image if posterUrl is missing or failed to load
     const imageSrc = imageError || !theme.posterUrl
         ? "/escape-room-placeholder.png"
         : theme.posterUrl;
+
+    // Use average scores if available, otherwise fallback to theme defaults
+    const displayScores = averageScores ? {
+        pointDifficulty: averageScores.pointDifficulty,
+        pointFear: averageScores.pointFear,
+        pointActivity: averageScores.pointActivity,
+        pointRecommendation: averageScores.pointRecommendation
+    } : {
+        pointDifficulty: theme.pointDifficulty,
+        pointFear: theme.pointFear,
+        pointActivity: theme.pointActivity,
+        pointRecommendation: theme.pointRecommendation
+    };
 
     const handleFavoriteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -120,10 +136,10 @@ export default function ThemeCard({ theme, onClick }: ThemeCardProps) {
 
                 {/* Scores Grid */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <ScoreBar label="난이도" score={theme.pointDifficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
-                    <ScoreBar label="공포도" score={theme.pointFear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
-                    <ScoreBar label="활동성" score={theme.pointActivity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
-                    <ScoreBar label="추천도" score={theme.pointRecommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
+                    <ScoreBar label="난이도" score={displayScores.pointDifficulty} icon={Star} colorClass="text-yellow-500" bgClass="bg-yellow-500" />
+                    <ScoreBar label="공포도" score={displayScores.pointFear} icon={Ghost} colorClass="text-purple-500" bgClass="bg-purple-500" />
+                    <ScoreBar label="활동성" score={displayScores.pointActivity} icon={Activity} colorClass="text-blue-500" bgClass="bg-blue-500" />
+                    <ScoreBar label="추천도" score={displayScores.pointRecommendation} icon={ThumbsUp} colorClass="text-green-500" bgClass="bg-green-500" />
                 </div>
 
                 {/* Homepage Link */}
